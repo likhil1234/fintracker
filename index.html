@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Finance Tracker</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center">Personal Finance Tracker</h1>
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <h3>Add Transaction</h3>
+                <form id="transactionForm">
+                  <div class="form-group">
+                      <label for="description">Description</label>
+                      <input type="text" class="form-control" id="description" required>
+                  </div>
+                  <div class="form-group">
+                      <label for="amount">Amount</label>
+                      <input type="number" class="form-control" id="amount" required>
+                  </div>
+                  <div class="form-group">
+                      <label for="type">Type</label>
+                      <select class="form-control" id="type" required>
+                          <option value="income">Income</option>
+                          <option value="expense">Expense</option>
+                      </select>
+                  </div>
+                  <div class="form-group">
+                      <label for="date">Date</label>
+                      <input type="date" class="form-control" id="date" required>
+                  </div>
+                  <button type="submit" class="btn btn-primary">Add Transaction</button>
+              </form>
+              
+            </div>
+            <div class="col-md-6">
+                <h3>Current Balance</h3>
+                <h2 id="balance" class="text-success">Rs0.00</h2>
+                <h3>Total Income: <span id="totalIncome" class="text-success">Rs0.00</span></h3>
+                <h3>Total Expense: <span id="totalExpense" class="text-danger">Rs0.00</span></h3>
+                <h3>Transaction History</h3>
+                <ul class="list-group" id="transactionList"></ul>
+            </div>
+        </div>
+    </div>
+    <script src="./script.js"></script>
+</body>
+</html>
