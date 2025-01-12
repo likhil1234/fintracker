@@ -7,7 +7,7 @@ app = Flask(__name__)
 CORS(app)  # Enable CORS for frontend-backend communication
 
 # MongoDB configuration
-MONGO_URI = "mongodb://localhost:27017/"  # Update if your MongoDB URI is different
+MONGO_URI = "mongodb+srv://likhil:sai123456@cluster0.njvur.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"  # Update if your MongoDB URI is different
 client = MongoClient(MONGO_URI)
 db = client.finance_tracker  # Database name
 transactions_collection = db.transactions  # Collection name
@@ -16,6 +16,21 @@ transactions_collection = db.transactions  # Collection name
 @app.route('/')
 def home():
     return jsonify({"message": "Welcome to the Personal Finance Tracker API!"})
+
+@app.route('/test-mongo', methods=['GET'])
+def test_mongo():
+    try:
+        collection = db['transactions']  # Referencing the transactions collection
+        sample_data = collection.find_one()
+        
+        if sample_data:
+            return jsonify({'status': 'success', 'data': sample_data}), 200
+        else:
+            return jsonify({'status': 'error', 'message': 'No data found'}), 404
+
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
 
 @app.route('/add', methods=['POST'])
 def add_transaction():
