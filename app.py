@@ -9,6 +9,8 @@ CORS(app)  # Enable CORS for frontend-backend communication
 # MongoDB configuration
 MONGO_URI = "mongodb+srv://likhil:sai123456@cluster0.njvur.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"  # Update if your MongoDB URI is different
 client = MongoClient(MONGO_URI)
+print("Connected to MongoDB:", client.server_info())
+
 db = client.finance_tracker  # Database name
 transactions_collection = db.transactions  # Collection name
 
