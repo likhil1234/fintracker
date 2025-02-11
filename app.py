@@ -4,7 +4,8 @@ from pymongo import MongoClient
 import os
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for frontend-backend communication
+CORS(app, resources={r"/*": {"origins": "*"}})
+  # Enable CORS for frontend-backend communication
 
 # MongoDB configuration
 MONGO_URI = "mongodb+srv://likhil:sai123456@cluster0.njvur.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"  # Update if your MongoDB URI is different
