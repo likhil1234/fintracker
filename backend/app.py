@@ -3,81 +3,33 @@ from flask_cors import CORS
 from pymongo import MongoClient
 from bson import ObjectId
 from datetime import datetime, timedelta
-import os
-import jwt
-import bcrypt
-import random
-import string
-from dotenv import load_dotenv
-from functools import wraps
+import os  # For PORT binding
 
-# Load environment variables
-load_dotenv()
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "https://finatrack.netlify.app"}})
+CORS(app, resources={r"/*": {"origins": "*"}})  # Allows Netlify origin
 
-# Configuration
-SECRET_KEY = os.getenv("SECRET_KEY", "default-secret-key")
-MONGO_URI = os.getenv("MONGO_URI")
+# MongoDB Configuration
+MONGO_URI = "mongodb+srv://likhil:sai123456@cluster0.njvur.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 
 try:
     client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
     db = client.finance_tracker
-    users_collection = db.users
     transactions_collection = db.transactions
     client.server_info()
     print("✅ Connected to MongoDB")
 except Exception as e:
     print(f"❌ MongoDB Connection Error: {e}")
-    exit(1)
 
-def generate_transcode(length=8):
-    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
-
-def require_auth(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        transcode = request.headers.get('X-Transcode')
-        if not transcode:
-            return jsonify({"error": "Transcode required"}), 401
-        user = users_collection.find_one({"transcode": transcode})
-        if not user:
-            return jsonify({"error": "Invalid transcode"}), 401
-        request.user = str(user["_id"])
-        return f(*args, **kwargs)
-    return decorated
+def serialize_transaction(transaction):
+    transaction["_id"] = str(transaction["_id"])
+    return transaction
 
 @app.route('/')
 def home():
     print("📍 Home route accessed")
     return jsonify({"message": "Welcome to the Personal Finance Tracker API!"})
 
-@app.route('/validate', methods=['POST'])
-def validate_transcode():
-    print("📍 Validate transcode route accessed")
-    try:
-        data = request.get_json(force=True)
-        transcode = data.get('transcode')
-
-        if not transcode:
-            return jsonify({"error": "Transcode is required"}), 400
-
-        user = users_collection.find_one({"transcode": transcode})
-        if not user:
-            # Generate a new transcode and user if not found
-            new_transcode = generate_transcode()
-            user_id = users_collection.insert_one({"transcode": new_transcode}).inserted_id
-            print(f"✅ New user created with transcode: {new_transcode}")
-            return jsonify({"transcode": new_transcode, "user_id": str(user_id)}), 201
-        else:
-            print(f"✅ Transcode validated for user: {str(user['_id'])}")
-            return jsonify({"user_id": str(user["_id"])}), 200
-    except Exception as e:
-        print(f"❌ Error while validating transcode: {e}")
-        return jsonify({"error": "Validation failed"}), 500
-
 @app.route('/add', methods=['POST'])
-@require_auth
 def add_transaction():
     print("📍 Add transaction route accessed")
     try:
@@ -92,11 +44,11 @@ def add_transaction():
         if data["amount"] <= 0:
             return jsonify({"error": "Amount must be positive"}), 400
 
+        # Ensure category exists, default to "Other" if missing
         data["category"] = data.get("category", "Other")
         if data["category"] not in ["Food", "Transport", "Salary", "Entertainment", "Bills", "Other"]:
             data["category"] = "Other"
 
-        data["user_id"] = request.user
         result = transactions_collection.insert_one(data)
         print(f"✅ Transaction added: {str(result.inserted_id)}")
         return jsonify({"message": "Transaction added successfully", "id": str(result.inserted_id)}), 201
@@ -105,11 +57,10 @@ def add_transaction():
         return jsonify({"error": "Failed to add transaction"}), 500
 
 @app.route('/transactions', methods=['GET'])
-@require_auth
 def get_transactions():
     print("📍 Transactions route accessed")
     try:
-        transactions = list(transactions_collection.find({"user_id": request.user}))
+        transactions = list(transactions_collection.find({}))
         transactions = [serialize_transaction(t) for t in transactions]
         print(f"📊 Returning {len(transactions)} transactions")
         return jsonify({"transactions": transactions}), 200
@@ -118,13 +69,12 @@ def get_transactions():
         return jsonify({"error": "Failed to fetch transactions"}), 500
 
 @app.route('/transaction/<transaction_id>', methods=['DELETE'])
-@require_auth
 def delete_transaction(transaction_id):
     print(f"📍 Delete transaction route accessed: {transaction_id}")
     try:
-        result = transactions_collection.delete_one({"_id": ObjectId(transaction_id), "user_id": request.user})
+        result = transactions_collection.delete_one({"_id": ObjectId(transaction_id)})
         if result.deleted_count == 0:
-            return jsonify({"error": "Transaction not found or unauthorized"}), 404
+            return jsonify({"error": "Transaction not found"}), 404
         print(f"✅ Transaction deleted: {transaction_id}")
         return jsonify({"message": "Transaction deleted"}), 200
     except Exception as e:
@@ -132,11 +82,10 @@ def delete_transaction(transaction_id):
         return jsonify({"error": "Failed to delete transaction"}), 500
 
 @app.route('/delete', methods=['DELETE'])
-@require_auth
 def delete_transactions():
     print("📍 Delete all transactions route accessed")
     try:
-        result = transactions_collection.delete_many({"user_id": request.user})
+        result = transactions_collection.delete_many({})
         print(f"✅ Deleted {result.deleted_count} transactions")
         return jsonify({"message": f"{result.deleted_count} transactions deleted."}), 200
     except Exception as e:
@@ -144,11 +93,10 @@ def delete_transactions():
         return jsonify({"error": "Failed to delete transactions"}), 500
 
 @app.route('/balance', methods=['GET'])
-@require_auth
 def calculate_balance():
     print("📍 Balance route accessed")
     try:
-        transactions = list(transactions_collection.find({"user_id": request.user}))
+        transactions = list(transactions_collection.find({}))
         total_income = sum(t["amount"] for t in transactions if t["type"] == "income")
         total_expense = sum(t["amount"] for t in transactions if t["type"] == "expense")
         balance = total_income - total_expense
@@ -163,9 +111,24 @@ def calculate_balance():
         print(f"❌ Error while calculating balance: {e}")
         return jsonify({"error": "Failed to calculate balance"}), 500
 
-def serialize_transaction(transaction):
-    transaction["_id"] = str(transaction["_id"])
-    return transaction
+@app.route('/reports', methods=['GET'])
+def get_reports():
+    print("📍 Reports route accessed")
+    try:
+        period = request.args.get('period', 'monthly')
+        print(f"📈 Generating reports for period: {period}")
+        if period != 'monthly':
+            return jsonify({"error": "Only monthly period supported"}), 400
+
+        transactions = list(transactions_collection.find({}))
+        transactions = [serialize_transaction(t) for t in transactions]
+        print(f"📊 Returning {len(transactions)} transactions for reports")
+        return jsonify({"transactions": transactions}), 200
+    except Exception as e:
+        print(f"❌ Error while generating reports: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": f"Failed to generate reports: {str(e)}"}), 500
 
 # Log all registered routes on startup
 print("🚀 Starting Flask app...")
@@ -177,4 +140,4 @@ with app.test_request_context():
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=False)
+    app.run(host="0.0.0.0", port=port, debug=False)  # Bind to 0.0.0.0 for Render

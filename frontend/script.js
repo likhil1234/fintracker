@@ -1,18 +1,8 @@
-let currentUser = null;
-
 const API_BASE = "https://fintracker-afa0.onrender.com";
 
-// Prompt for transcode on load
-document.addEventListener('DOMContentLoaded', () => {
-    $('#myTab a[href="#transcode"]').tab('show');
-});
-
 async function loadTransactions() {
-    if (!currentUser) return;
     try {
-        const res = await fetch(`${API_BASE}/transactions`, {
-            headers: { 'X-Transcode': currentUser }
-        });
+        const res = await fetch(`${API_BASE}/transactions`);
         const data = await res.json();
 
         const transactionList = document.getElementById('transactionList');
@@ -33,11 +23,8 @@ async function loadTransactions() {
 }
 
 async function loadBalance() {
-    if (!currentUser) return;
     try {
-        const res = await fetch(`${API_BASE}/balance`, {
-            headers: { 'X-Transcode': currentUser }
-        });
+        const res = await fetch(`${API_BASE}/balance`);
         const data = await res.json();
         document.getElementById('balance').textContent = `Rs${data.balance.toFixed(2)}`;
         document.getElementById('totalIncome').textContent = `Rs${data.totalIncome.toFixed(2)}`;
@@ -48,14 +35,10 @@ async function loadBalance() {
 }
 
 async function deleteTransaction(id) {
-    if (!currentUser) return;
     if (!confirm("Are you sure you want to delete this transaction?")) return;
 
     try {
-        const res = await fetch(`${API_BASE}/transaction/${id}`, {
-            method: 'DELETE',
-            headers: { 'X-Transcode': currentUser }
-        });
+        const res = await fetch(`${API_BASE}/transaction/${id}`, { method: 'DELETE' });
         if (!res.ok) throw new Error("Delete failed");
         loadTransactions();
         loadBalance();
@@ -68,11 +51,6 @@ async function deleteTransaction(id) {
 document.getElementById('transactionForm').addEventListener('submit', async function (e) {
     e.preventDefault();
 
-    if (!currentUser) {
-        alert("Please enter a valid transcode first.");
-        return;
-    }
-
     const description = document.getElementById('description').value;
     const amount = parseFloat(document.getElementById('amount').value);
     const type = document.getElementById('type').value;
@@ -84,7 +62,7 @@ document.getElementById('transactionForm').addEventListener('submit', async func
     try {
         const response = await fetch(`${API_BASE}/add`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-Transcode': currentUser },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(transaction)
         });
 
@@ -100,57 +78,11 @@ document.getElementById('transactionForm').addEventListener('submit', async func
     }
 });
 
-document.getElementById('transcodeForm').addEventListener('submit', async function (e) {
-    e.preventDefault();
-
-    const transcode = document.getElementById('transcode').value;
-
-    try {
-        const response = await fetch(`${API_BASE}/validate`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ transcode })
-        });
-        const data = await response.json();
-
-        if (response.ok) {
-            currentUser = transcode;
-            document.getElementById('transcodeMessage').textContent = `Access granted. Welcome!`;
-            document.getElementById('transcodeMessage').className = 'text-success mt-3';
-            loadTransactions();
-            loadBalance();
-            loadReports();
-            $('#myTab a[href="#tracker"]').tab('show');
-        } else {
-            document.getElementById('transcodeMessage').textContent = data.error || 'Invalid transcode.';
-            document.getElementById('transcodeMessage').className = 'text-danger mt-3';
-        }
-    } catch (err) {
-        console.error("❌ Error", err);
-        document.getElementById('transcodeMessage').textContent = 'An error occurred. Please try again.';
-        document.getElementById('transcodeMessage').className = 'text-danger mt-3';
-    }
-});
-
-// Logout functionality
-document.getElementById('logoutButton')?.addEventListener('click', () => {
-    currentUser = null;
-    $('#myTab a[href="#transcode"]').tab('show');
-});
-
-document.getElementById('logoutButtonReports')?.addEventListener('click', () => {
-    currentUser = null;
-    $('#myTab a[href="#transcode"]').tab('show');
-});
-
 let expenseVsIncomeChart;
 
 async function loadReports() {
-    if (!currentUser) return;
     try {
-        const res = await fetch(`${API_BASE}/transactions`, {
-            headers: { 'X-Transcode': currentUser }
-        });
+        const res = await fetch(`${API_BASE}/transactions`); // Fetch all transactions
         if (!res.ok) {
             const errorText = await res.text();
             console.error("❌ API Error Response:", errorText);
@@ -158,9 +90,11 @@ async function loadReports() {
         }
         const data = await res.json();
 
+        // Sort transactions by date to find the last transaction
         const sortedTransactions = data.transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
         const lastTransactionDate = sortedTransactions.length ? sortedTransactions[0].date : new Date().toISOString().split('T')[0];
 
+        // Calculate cumulative totals up to the last transaction
         const totals = sortedTransactions.reduce((acc, txn) => {
             if (new Date(txn.date) <= new Date(lastTransactionDate)) {
                 acc.income += txn.type === 'income' ? txn.amount : 0;
@@ -169,6 +103,7 @@ async function loadReports() {
             return acc;
         }, { income: 0, expense: 0 });
 
+        // Bar Chart: Expense vs Income
         const ctx = document.getElementById('expenseVsIncomeChart').getContext('2d');
         if (expenseVsIncomeChart) expenseVsIncomeChart.destroy();
         expenseVsIncomeChart = new Chart(ctx, {
@@ -190,21 +125,37 @@ async function loadReports() {
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: false,
-                aspectRatio: 2,
+                maintainAspectRatio: false, // Allows custom size control
+                aspectRatio: 2, // Sets a fixed aspect ratio (width:height = 2:1)
                 scales: {
                     y: {
                         beginAtZero: true,
                         title: { display: true, text: 'Amount (Rs)' },
-                        ticks: { callback: value => `Rs${value}` }
+                        ticks: { callback: value => `Rs${value}` } // Format y-axis labels
                     },
                     x: { title: { display: true, text: 'Date' } }
                 },
                 plugins: { legend: { position: 'top' } },
-                layout: { padding: { top: 10, bottom: 10, left: 10, right: 10 } }
+                layout: { padding: { top: 10, bottom: 10, left: 10, right: 10 } } // Add padding for stability
             }
         });
     } catch (err) {
         console.error("❌ Failed to load reports", err);
     }
 }
+
+// Load data when page starts and on tab switch
+document.addEventListener('DOMContentLoaded', () => {
+    loadTransactions();
+    loadBalance();
+    loadReports();
+
+    // Refresh charts when switching to Reports tab
+    document.querySelectorAll('.nav-link').forEach(tab => {
+        tab.addEventListener('shown.bs.tab', () => {
+            if (document.getElementById('reports').classList.contains('active')) {
+                loadReports();
+            }
+        });
+    });
+});
