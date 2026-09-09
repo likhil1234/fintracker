@@ -1,42 +1,228 @@
+:root {
+    --primary: #4f46e5;
+    --primary-hover: #4338ca;
+    --success: #10b981;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --bg-surface: #ffffff;
+    --bg-body: #f3f4f6;
+    --text-primary: #111827;
+    --text-secondary: #4b5563;
+    --border-color: #e5e7eb;
+}
+
 body {
-    background-color: #f8f9fa;
-    font-family: Arial, sans-serif;
+    background-color: var(--bg-body);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: var(--text-primary);
+    padding-bottom: 40px;
 }
 
-h1 {
-    font-size: 2.5rem;
-    font-weight: bold;
-    color: #343a40;
+.navbar-brand {
+    font-weight: 700;
+    font-size: 1.4rem;
+    color: var(--primary) !important;
 }
 
-h3 {
-    font-size: 1.5rem;
-    font-weight: bold;
-    margin-top: 20px;
-}
-
-h4 {
-    font-size: 1.25rem;
-    margin-bottom: 15px;
-}
-
-#balance {
-    font-size: 2rem;
-    margin-top: 10px;
-}
-
-.list-group-item span {
-    font-size: 1.1rem;
-}
-
-canvas {
-    max-width: 100%;
-    height: auto;
+.dashboard-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 4px 14px 0 rgba(0, 0, 0, 0.04);
+    padding: 20px;
     margin-bottom: 20px;
 }
 
-#expenseVsIncomeChart {
-    position: relative !important;
-    width: 100% !important;
-    height: 100% !important;
+.dashboard-card h4, .dashboard-card h5 {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+}
+
+/* Stat Cards */
+.stat-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+}
+
+.stat-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    letter-spacing: 0.5px;
+}
+
+.stat-value {
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin-top: 4px;
+}
+
+.val-balance { color: var(--primary); }
+.val-income { color: var(--success); }
+.val-expense { color: var(--danger); }
+.val-bill { color: #8b5cf6; }
+
+/* Dynamic Item Row inside Single Form */
+.item-row {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 8px;
+    position: relative;
+    transition: background-color 0.15s ease;
+}
+
+.item-row:hover {
+    background: #f3f4f6;
+}
+
+.btn-remove-row {
+    color: #9ca3af;
+    background: transparent;
+    border: none;
+    font-size: 1.1rem;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.btn-remove-row:hover {
+    color: var(--danger);
+}
+
+/* Live Form Summary Box */
+.form-summary-box {
+    background: #eef2ff;
+    border: 1px solid #c7d2fe;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 16px;
+    font-size: 0.88rem;
+}
+
+/* Charts */
+.chart-container {
+    position: relative;
+    height: 250px;
+    width: 100%;
+}
+
+/* Table styling */
+.history-table th {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    border-top: none;
+}
+
+.history-table td {
+    vertical-align: middle;
+    font-size: 0.95rem;
+}
+
+.badge-bill {
+    background-color: #ede9fe;
+    color: #6d28d9;
+    font-weight: 500;
+}
+
+.badge-income {
+    background-color: #d1fae5;
+    color: #065f46;
+    font-weight: 600;
+}
+
+.badge-expense {
+    background-color: #fee2e2;
+    color: #991b1b;
+    font-weight: 600;
+}
+
+/* Receipt template for PDF download — hidden, used only as a clone source */
+#billReceiptTemplate {
+    display: none;
+}
+
+
+.receipt-header {
+    border-bottom: 2px solid #4f46e5;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+
+.receipt-header h2 {
+    color: #4f46e5;
+    font-weight: 800;
+    margin: 0;
+}
+
+.receipt-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+.receipt-table th {
+    background: #f3f4f6;
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #d1d5db;
+    font-size: 13px;
+}
+
+.receipt-table td {
+    padding: 10px;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 13px;
+}
+
+.receipt-summary-box {
+    margin-top: 25px;
+    margin-bottom: 20px;
+    padding: 16px 20px 20px 20px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    page-break-inside: avoid;
+}
+
+.receipt-summary-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.receipt-summary-line.grand-total {
+    border-top: 2px dashed #4f46e5;
+    padding-top: 12px;
+    padding-bottom: 8px;
+    margin-top: 12px;
+    margin-bottom: 0;
+    font-size: 18px;
+    font-weight: 800;
+    color: #111827;
+    line-height: 1.5;
+}
+
+.receipt-footer {
+    margin-top: 25px;
+    padding-top: 15px;
+    border-top: 1px solid #e5e7eb;
+    font-size: 11px;
+    color: #9ca3af;
+    text-align: center;
+    page-break-inside: avoid;
 }
