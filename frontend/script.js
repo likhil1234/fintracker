@@ -3,7 +3,7 @@ const API_BASE = (window.location.hostname === "localhost" ||
                   window.location.hostname === "127.0.0.1" || 
                   window.location.protocol === "file:")
     ? "http://127.0.0.1:5000"
-    : "https://fintracker-afa0.onrender.com";
+    : "https://fintracker-suxe.onrender.com";
 
 console.log(`🔗 FinTracker using API: ${API_BASE}`);
 
@@ -51,8 +51,7 @@ async function checkApiHealth() {
         const badge = document.getElementById('apiStatusBadge');
         if (res.ok) {
             badge.className = "badge badge-success py-2 px-3 mr-2";
-            badge.innerHTML = `<i class="fas fa-check-circle mr-1"></i> Connected (${API_BASE.includes('127.0.0.1') ? 'Local SQLite' : 'Render'})`;
-        } else {
+badge.innerHTML = `<i class="fas fa-check-circle mr-1"></i> Connected (${API_BASE.includes('127.0.0.1') ? 'Local PostgreSQL' : 'Render + PostgreSQL'})`;        } else {
             badge.className = "badge badge-warning py-2 px-3 mr-2";
             badge.innerHTML = `<i class="fas fa-exclamation-triangle mr-1"></i> API Warning (${res.status})`;
         }
